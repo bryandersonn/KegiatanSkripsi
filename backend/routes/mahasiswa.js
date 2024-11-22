@@ -2,67 +2,72 @@ var express = require('express');
 var router = express.Router();
 var mysql = require('../mysql');
 
-// get all mahasiswa
-router.get('/', async (req, res) => {
+// register mahasiwa
+router.post('/registermahasiswa', async (req, res) => {
+    const {NIM, Nama, Email, Password, TanggalLahir, Alamat} = req.body;
     try {
-        const [result] = await mysql.query('SELECT * FROM mahasiswa');
-        res.json(result);
+        const intomahasiswa =
+        'INSERT INTO mahasiswa (NIM, Nama, Email, TanggalLahir, Alamat) VALUES (?, ?, ?, ?, ?)';
+        const intouser = 'INSERT INTO user (Email, Password, Role) VALUES (?, ?, "Mahasiswa")';
+        await mysql.query(intouser, [Email, Password]);
+        await mysql.query(intomahasiswa, [NIM, Nama, Email, TanggalLahir, Alamat]);
+        res.status(200).send('Register Success');
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
-// create mahasiswa
-router.post('/create', async (req, res) => {
-    const {name, email, password} = req.body;
+// see mahasiswa
+router.get('/mahasiswa', async (req, res) => {
     try {
-        const [result] = await mysql.query(
-            'INSERT INTO mahasiswa (name, email, password) VALUES (?, ?, ?)'
-            , [name, email, password]);
-        res.status(201).json({ id: result.insertId, name, email });
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-
-// get mahasiswa by id
-router.get('/:mahasiswaID', async (req, res) => {
-    const { mahasiswaID } = req.params;
-    try {
-        const [result] = await mysql.query(
-            'SELECT * FROM mahasiswa WHERE mahasiswaID = ?'
-            , [mahasiswaID]);
-        if (rows.length === 0) return res.status(404).send('mahasiswa not found');
-        res.json(result[0]);
+        const query = 'SELECT * FROM mahasiswa';
+        const [rows] = await mysql.query(query);
+        res.status(200).json(rows);
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
 
-// update
-router.put('/:mahasiswaID/update', async (req, res) => {
-    const { mahasiswaID } = req.params;
-    const {name, email, password} = req.body;
+router.get('/mahasiswa/:nim', async (req, res) => {
+    const { nim } = req.params;
     try {
-        const [result] = await mysql.query(
-            'UPDATE mahasiswa SET Name = ?, Email = ?, Password = ? WHERE mahasiswaID = ?'
-            , [name, email, password, mahasiswaID]);
-        res.status(201).send('mahasiswa updated');
+        const query = 'SELECT * FROM mahasiswa WHERE NIM = ?';
+        const [rows] = await mysql.query(query, [nim]);
+        if (rows.length === 0) {
+            return res.status(404).send('Mahasiswa not found');
+        }
+        res.status(200).json(rows[0]);
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
-// delete
-router.delete('/:mahasiswaID/delete', async (req, res) => {
-    const { mahasiswaID } = req.params;
+
+router.put('/mahasiswa/:nim', async (req, res) => {
+    const { nim } = req.params;
+    const { Nama, Email, Password, TanggalLahir, Alamat } = req.body;
     try {
-        const [result] = await mysql.query(
-            'DELETE FROM mahasiswa WHERE mahasiswaID = ?'
-            , [mahasiswaID]);
-            res.status(201).send('mahasiswa deleted');
+        const updateUser = 'UPDATE user SET Email = ?, Password = ? WHERE Email = (SELECT Email FROM mahasiswa WHERE NIM = ?)';
+        const updateMahasiswa =
+            'UPDATE mahasiswa SET Nama = ?, Email = ?, TanggalLahir = ?, Alamat = ? WHERE NIM = ?';
+        await mysql.query(updateUser, [Email, Password, nim]);
+        await mysql.query(updateMahasiswa, [Nama, Email, TanggalLahir, Alamat, nim]);
+        res.status(200).send('Mahasiswa updated successfully');
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+
+router.delete('/mahasiswa/:nim', async (req, res) => {
+    const { nim } = req.params;
+    try {
+        const deleteUser = 'DELETE FROM user WHERE Email = (SELECT Email FROM mahasiswa WHERE NIM = ?)';
+        const deleteMahasiswa = 'DELETE FROM mahasiswa WHERE NIM = ?';
+        await mysql.query(deleteUser, [nim]);
+        await mysql.query(deleteMahasiswa, [nim]);
+        res.status(200).send('Mahasiswa deleted successfully');
     } catch (err) {
         res.status(500).send(err.message);
     }

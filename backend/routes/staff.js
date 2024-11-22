@@ -2,70 +2,42 @@ var express = require('express');
 var router = express.Router();
 var mysql = require('../mysql');
 
-// get all staff
-router.get('/', async (req, res) => {
+// register Staff
+router.post('/registerstaff', async (req, res) => {
+    const {BNID, Nama, Email, Password} = req.body;
     try {
-        const [result] = await mysql.query('SELECT * FROM staff');
-        res.json(result);
+        const intostaff =
+        'INSERT INTO staff (StaffID, Nama, Email) VALUES (?, ?, ?)';
+        const intouser = 'INSERT INTO user (Email, Password, Role) VALUES (?, ?, "Staff")';
+        await mysql.query(intouser, [Email, Password]);
+        await mysql.query(intostaff, [BNID, Nama, Email]);
+        res.status(200).send('Register Success');
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
-// create staff
-router.post('/create', async (req, res) => {
-    const {name, email, password} = req.body;
+// take StaffID by local email
+router.get('/staff-id', async (req, res) => {
+    const { email } = req.query; // Expecting the email as a query parameter
+
+    if (!email) {
+        return res.status(400).send('Email is required');
+    }
+
     try {
-        const [result] = await mysql.query(
-            'INSERT INTO staff (name, email, password) VALUES (?, ?, ?)'
-            , [name, email, password]);
-        res.status(201).json({ id: result.insertId, name, email });
+        const [rows] = await mysql.query('SELECT StaffID FROM staff WHERE Email = ?', [email]);
+        if (rows.length > 0) {
+            res.status(200).json({ StaffID: rows[0].StaffID });
+        } else {
+            res.status(404).send('Staff not found');
+        }
     } catch (err) {
-        res.status(500).send(err.message);
+        console.error('Error fetching StaffID:', err.message);
+        res.status(500).send('Error fetching StaffID');
     }
 });
 
 
-// get staff by id
-router.get('/:staffID', async (req, res) => {
-    const { staffID } = req.params;
-    try {
-        const [result] = await mysql.query(
-            'SELECT * FROM staff WHERE staffID = ?'
-            , [staffID]);
-        if (rows.length === 0) return res.status(404).send('staff not found');
-        res.json(result[0]);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-
-// update
-router.put('/:staffID/update', async (req, res) => {
-    const { staffID } = req.params;
-    const {name, email, password} = req.body;
-    try {
-        const [result] = await mysql.query(
-            'UPDATE staff SET Name = ?, Email = ?, Password = ? WHERE staffID = ?'
-            , [name, email, password, staffID]);
-        res.status(201).send('staff updated');
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
-
-// delete
-router.delete('/:staffID/delete', async (req, res) => {
-    const { staffID } = req.params;
-    try {
-        const [result] = await mysql.query(
-            'DELETE FROM staff WHERE staffID = ?'
-            , [staffID]);
-            res.status(201).send('staff deleted');
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
-});
 
 module.exports = router;

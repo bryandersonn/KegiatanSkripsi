@@ -4,14 +4,18 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+var cors = require('cors');
+
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var usersRouter = require('./routes/user');
 var dosensRouter = require('./routes/dosen');
 var mahasiswasRouter = require('./routes/mahasiswa');
 var staffsRouter = require('./routes/staff');
 var skripsisRouter = require('./routes/skripsi');
 
 var app = express();
+
+app.use(cors());
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -27,6 +31,7 @@ app.use('/api/mahasiswas', mahasiswasRouter);
 app.use('/api/dosens', dosensRouter);
 app.use('/api/staffs', staffsRouter);
 app.use('/api/skripsis', skripsisRouter);
+app.use('/api/users', usersRouter);
 
 const run = require('./seeder');
 
@@ -49,5 +54,9 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+// var listener = app.listen(8888, function(){
+//   console.log('Listening on port ' + listener.address().port); //Listening on port 8888
+// });
 
 module.exports = app;
