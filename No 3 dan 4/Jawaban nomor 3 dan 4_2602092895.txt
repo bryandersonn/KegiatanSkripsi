@@ -1,0 +1,48 @@
+Jawaban Nomor 3 dan 4
+
+No 3:
+Link Figma:
+https://www.figma.com/design/rU7C8Tqby9uBuZAFyCSgWF/DesignUI_StaffDashboard_Bryan-Anderson---2602092895?node-id=0-1&node-type=canvas&t=VoRyh5iLapoGEWb0-0
+
+
+No 4:
+Untuk Query, sudah tersedia jawaban query di folder backend saya, di skripsi.js untuk update query, dan ada insert into query di seeder.js:
+
+Insert into:
+    await mysql.query(
+      `INSERT INTO skripsi (nim, dosenID, staffID, JudulSkripsi, LinkFile, StatusSkripsi, TanggalSidang, TempatSidang) VALUES
+            ('2440012345', 'D001', 'S001', 'Penerapan Machine Learning dalam Analisis Sentimen di Media Sosial', 'https://drive.google.com/file/d/123456789abcdef/view', 'Pending', '2024-12-15', 'Ruangan R-305'),
+            ('2440016789', 'D002', 'S002', 'Optimalisasi Algoritma K-Means untuk Pemetaan Wilayah UMKM', 'https://drive.google.com/file/d/abcdef123456789/view', 'Accepted', '2024-11-30', 'Ruangan R-202'),
+            ('2440013456', 'D003', 'S003', 'Pengembangan Sistem Pakar untuk Diagnosa Penyakit Tanaman Padi', 'https://drive.google.com/file/d/abcd1234efgh5678/view', 'Scheduled', '2024-12-01', 'Ruangan R-204'),
+        `
+    );
+
+    console.log("Skripsi data inserted");
+
+Update:
+router.put('/:skripsiID', async (req, res) => {
+    const { skripsiID } = req.params;
+    const { TanggalSidang, TempatSidang, CurrStaffID } = req.body;
+
+    try {
+        await mysql.query(
+            `UPDATE skripsi SET TanggalSidang = ?, TempatSidang = ?, staffID = ?, StatusSkripsi = ? WHERE ID = ?`,
+            [TanggalSidang, TempatSidang, CurrStaffID, 'Scheduled', skripsiID]
+        );
+        res.json({ message: 'Skripsi updated successfully' });
+    } catch (error) {
+        console.error('Error updating skripsi:', error);
+        res.status(500).json({ error: 'Failed to update skripsi' });
+    }
+});
+
+Get/Select All:
+router.get('/skripsi', async (req, res) => {
+    try {
+        const [results] = await mysql.query('SELECT * FROM skripsi WHERE StatusSkripsi = "Accepted" OR StatusSkripsi = "Scheduled" ');
+        res.json(results);
+    } catch (error) {
+        console.error('Error fetching skripsi:', error);
+        res.status(500).json({ error: 'Failed to fetch skripsi' });
+    }
+});
